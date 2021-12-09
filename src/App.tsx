@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Navigate, Outlet, Route, Routes } from "react-router";
 import ColorModeContext from "./contexts/color-mode.context";
 import useObservable from "./hooks/use-observable.hook";
-import LocationOutlet from "./pages/LocationPage";
+import LocationOutlet from "./pages/LocationsPage";
 import LoginPage from "./pages/LoginPage";
 import authenticationService from "./services/authentication.service";
 
@@ -41,10 +41,7 @@ function App() {
                     <Route path="/" element={rootLayout}>
                         <Route index element={<LoginPage />} />
                         {isAuthed && <>
-                            <Route path="locations">
-                                <Route index element={<div>Ahojkyy</div>}/>
-                                <Route path=":id/*" element={<LocationOutlet />} />
-                            </Route>
+                            <Route path="locations/*" element={<LocationOutlet/>}/>
                         </>}
                         <Route path="*" element={<Navigate replace to="/"/>}/>
                     </Route>
