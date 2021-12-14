@@ -30,9 +30,11 @@ const StatsPage: React.FC = () => {
     return (
         <Box sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto" }}>
             <Timeline />
-            <Typography sx={{ mt: 1 }} variant="h4">Total</Typography>
-            <Line data={data} />
-            <Grid container spacing={6}>
+            <Grid sx={{ pl: 6}} container spacing={6}>
+                <Grid item xs={11}>
+                    <Typography sx={{ mt: 1 }} variant="h4">Total</Typography>
+                    <Line data={data} />
+                </Grid>
                 <Grid item>
                     <Typography variant="h4">Cars</Typography>
                     <Line data={data} />
