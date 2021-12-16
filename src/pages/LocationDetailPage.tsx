@@ -1,17 +1,19 @@
-import { Box, Grid, Paper, Tab, Tabs, Typography } from "@mui/material";
-import { Chart as ChartJS, LinearScale, LineElement, PointElement, Title, CategoryScale } from 'chart.js';
-import React, { useEffect, useState } from "react";
+import { DesktopDatePicker, LocalizationProvider, TimePicker } from "@mui/lab";
+import { Box, Container, FormControl, Grid, InputLabel, MenuItem, Select, Slider, Tab, Tabs, TextField, Typography } from "@mui/material";
+import { CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Title } from 'chart.js';
+import React, { useState } from "react";
 import { Line } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { tap } from "rxjs";
 import LocationContext from "../contexts/location.context";
-import useObservable from "../hooks/use-observable.hook";
 import useLoading from "../hooks/use-loading.hook";
-import locationService from "../services/location.service";
-import uiService from "../services/ui.service";
-import trafficService from "../services/traffic.service";
-import Timeline from "./../components/Timeline";
+import useObservable from "../hooks/use-observable.hook";
 import { TrafficModel } from "../models/traffic.model";
+import locationService from "../services/location.service";
+import trafficService from "../services/traffic.service";
+import uiService from "../services/ui.service";
+import AdapterDateFns from '@mui/lab/AdapterDateFns';
+
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale);
 
@@ -20,6 +22,20 @@ const StatsPage: React.FC = () => {
     const [startBoundary, setStartBoundary] = useState(new Date());
     const [endBoundary, setEndBoundary] = useState(new Date());
     const [interval, setInterval] = useState(60000);
+    const [selectedDate, setSelectedDate] = React.useState<Date | null>(
+        new Date('2014-08-18T21:11:54'),
+    );
+
+    const handleDateChange = (newValue: Date | null) => {
+        setSelectedDate(newValue);
+    };
+
+    const handleIntervalChange = (event: Event, newValue: number | number[]) => {
+        if (Array.isArray(newValue)) {
+            setStartBoundary(new Date(newValue[0]));
+            setEndBoundary(new Date(newValue[1]));
+        }
+    };
 
     const trafficData = useObservable(useLoading(trafficService.latest$));
 
@@ -37,7 +53,7 @@ const StatsPage: React.FC = () => {
 
         const firstDate = filtered[0].timestamp.getTime();
         return {
-            labels: data.map((_, idx) => new Date(firstDate + idx * interval).toLocaleString("en-US",{ hour: "numeric", minute: "numeric"})),
+            labels: data.map((_, idx) => new Date(firstDate + idx * interval).toLocaleString("en-US", { hour: "numeric", minute: "numeric" })),
             datasets: [
                 {
                     data,
@@ -61,8 +77,42 @@ const StatsPage: React.FC = () => {
     };
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto" }}>
-            <Timeline />
+        <Container sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto", pt: 1 }}>
+            {/* <Timeline /> */}
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box>
+                    <DesktopDatePicker
+                        label="Selected Day"
+                        inputFormat="MM/dd/yyyy"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                        renderInput={(params) => <TextField {...params} />}
+                    />
+                    {/* <TimePicker
+                        label="Time"
+                        value={selectedDate}
+                        onChange={handleDateChange}
+                        renderInput={(params) => <TextField {...params} />}
+                    /> */}
+                    <FormControl>
+                        <InputLabel id="select-interval">Interval</InputLabel>
+                        <Select
+                            labelId="select-interval"
+                            id="select"
+                            value={interval}
+                            label="Interval"
+                            onChange={ev => setInterval(ev.target.value as number)}
+                        >
+                            <MenuItem value={60000}>Minute</MenuItem>
+                            <MenuItem value={5 * 60 * 1000}>5 Minutes</MenuItem>
+                            <MenuItem value={10 * 60 * 1000}>10 Minutes</MenuItem>
+                            <MenuItem value={15 * 60 * 1000}>15 Minutes</MenuItem>
+                            <MenuItem value={30 * 60 * 1000}>30 Minutes</MenuItem>
+                            <MenuItem value={60 * 60 * 1000}>Hour</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
+            </LocalizationProvider>
             {trafficData &&
                 <Grid sx={{ pl: 6 }} container spacing={6}>
                     <Grid item xs={11}>
@@ -83,12 +133,17 @@ const StatsPage: React.FC = () => {
                     </Grid>
                 </Grid>
             }
-        </Box>
+        </Container>
     );
 }
 
 const LocationDetailPage: React.FC = () => {
-    return <div>HII</div>
+    return (
+        <Container sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto", pt: 1 }}>
+            <Typography variant="h5">Coordinates</Typography>
+            <Typography></Typography>
+        </Container>
+    );
 }
 
 const LocationDetailOutlet: React.FC = () => {

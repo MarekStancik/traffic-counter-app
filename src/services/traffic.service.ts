@@ -4,7 +4,7 @@ import { BehaviorSubject, delay, Observable } from "rxjs";
 class TrafficService {
     public latest: BehaviorSubject<TrafficModel[]> = new BehaviorSubject(Array.from({ length: 10000 }, (_, k) => ({
         id: k+"",
-        timestamp: new Date(new Date().getTime() + Math.random() * 750000),
+        timestamp: new Date(new Date().getTime() + Math.random() * 30 * 60 * 1000),
         trafficType: k % 3 === 0 ? "car" : k % 5 === 0 ? "pedestrian" : "bicycle",
     })) as TrafficModel[]);
 
