@@ -1,53 +1,88 @@
 import { Box, Grid, Paper, Tab, Tabs, Typography } from "@mui/material";
 import { Chart as ChartJS, LinearScale, LineElement, PointElement, Title, CategoryScale } from 'chart.js';
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { tap } from "rxjs";
 import LocationContext from "../contexts/location.context";
 import useObservable from "../hooks/use-observable.hook";
+import useLoading from "../hooks/use-loading.hook";
 import locationService from "../services/location.service";
 import uiService from "../services/ui.service";
+import trafficService from "../services/traffic.service";
 import Timeline from "./../components/Timeline";
+import { TrafficModel } from "../models/traffic.model";
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale);
 
 const StatsPage: React.FC = () => {
-    const data = {
-        labels: ["1", "2", "3"],
-        datasets: [
-            {
-                label: "Cars",
-                data: [23, 34, 22],
-                fill: false,
-                backgroundColor: "rgb(255, 99, 132)",
-                borderColor: "rgba(255, 99, 132, 0.2)",
-                marginLeft: "20px"
+
+    const [startBoundary, setStartBoundary] = useState(new Date());
+    const [endBoundary, setEndBoundary] = useState(new Date());
+    const [interval, setInterval] = useState(60000);
+
+    const trafficData = useObservable(useLoading(trafficService.latest$));
+
+    const getDataFor = (types: TrafficModel["trafficType"][], interval: number) => {
+        const filtered = trafficData!.filter(td => types.includes(td.trafficType)).sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
+        const data = [];
+        for (let index = 0; index < filtered.length;) {
+            const element = filtered[index];
+            const endBoundary = new Date(element.timestamp.getTime() + interval);
+            let nextIndex = filtered.findIndex(td => td.timestamp > endBoundary);
+            if (nextIndex === -1) nextIndex = filtered.length;
+            data.push(nextIndex - index);
+            index = nextIndex;
+        }
+
+        const firstDate = filtered[0].timestamp.getTime();
+        return {
+            labels: data.map((_, idx) => new Date(firstDate + idx * interval).toLocaleString("en-US",{ hour: "numeric", minute: "numeric"})),
+            datasets: [
+                {
+                    data,
+                    fill: false,
+                    backgroundColor: "rgb(255, 99, 132)",
+                    borderColor: "rgba(255, 99, 132, 0.2)",
+                    marginLeft: "20px"
+                }
+            ]
+        };
+    }
+
+    const chartOptions = {
+        scales: {
+            y: {
+                ticks: {
+                    precision: 0
+                }
             }
-        ]
+        }
     };
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto" }}>
             <Timeline />
-            <Grid sx={{ pl: 6}} container spacing={6}>
-                <Grid item xs={11}>
-                    <Typography sx={{ mt: 1 }} variant="h4">Total</Typography>
-                    <Line data={data} />
+            {trafficData &&
+                <Grid sx={{ pl: 6 }} container spacing={6}>
+                    <Grid item xs={11}>
+                        <Typography sx={{ mt: 1 }} variant="h4">Total</Typography>
+                        <Line options={chartOptions} data={getDataFor(["car", "bicycle", "motorbike", "pedestrian"], interval)} />
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="h4">Cars</Typography>
+                        <Line options={chartOptions} data={getDataFor(["car"], interval)} />
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="h4">TwoWheeled</Typography>
+                        <Line options={chartOptions} data={getDataFor(["bicycle", "motorbike"], interval)} />
+                    </Grid>
+                    <Grid item>
+                        <Typography variant="h4">Pedestrians</Typography>
+                        <Line options={chartOptions} data={getDataFor(["pedestrian"], interval)} />
+                    </Grid>
                 </Grid>
-                <Grid item>
-                    <Typography variant="h4">Cars</Typography>
-                    <Line data={data} />
-                </Grid>
-                <Grid item>
-                    <Typography sx={{ mt: 1 }} variant="h4">Cycles</Typography>
-                    <Line data={data} />
-                </Grid>
-                <Grid item>
-                    <Typography sx={{ mt: 1 }} variant="h4">Pedestrians</Typography>
-                    <Line data={data} />
-                </Grid>
-            </Grid>
+            }
         </Box>
     );
 }

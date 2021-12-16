@@ -8,6 +8,7 @@ import React, { useEffect } from "react";
 import { Link as RouterLink, Outlet, Route, Routes } from "react-router-dom";
 import { tap } from "rxjs";
 import Navbar from "../components/Navbar";
+import useLoading from "../hooks/use-loading.hook";
 import useObservable from "../hooks/use-observable.hook";
 import { LocationModel } from "../models/location.model";
 import locationService from "../services/location.service";
@@ -71,10 +72,9 @@ const LocationsPage: React.FC = () => {
             title: "Locations",
             active: true
         }]);
-        uiService.setIsLoading(true);
     }, []);
 
-    const locations = useObservable(locationService.list().pipe(tap(_ => uiService.setIsLoading(false))));
+    const locations = useObservable(useLoading(locationService.list()));
 
     if (!locations) return <></>;
 
