@@ -1,8 +1,8 @@
 import { DesktopDatePicker, LocalizationProvider, TimePicker } from "@mui/lab";
 import { Box, Container, FormControl, Grid, InputLabel, MenuItem, Select, Slider, Tab, Tabs, TextField, Typography } from "@mui/material";
-import { CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Title } from 'chart.js';
+import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Title } from 'chart.js';
 import React, { useState } from "react";
-import { Line } from "react-chartjs-2";
+import { Bar, Line } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { tap } from "rxjs";
 import LocationContext from "../contexts/location.context";
@@ -15,29 +15,23 @@ import uiService from "../services/ui.service";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 
 
-ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale);
+ChartJS.register(LineElement, BarElement, PointElement, LinearScale, Title, CategoryScale);
 
 const StatsPage: React.FC = () => {
+    const trafficData = useObservable(useLoading(trafficService.list$).pipe(tap(_ => console.log("pica"))));
 
-    const [startBoundary, setStartBoundary] = useState(new Date());
-    const [endBoundary, setEndBoundary] = useState(new Date());
+    const [timeBoundaries, setTimeBoundaries] = useState([0,24])
     const [interval, setInterval] = useState(60000);
-    const [selectedDate, setSelectedDate] = React.useState<Date | null>(
-        new Date('2014-08-18T21:11:54'),
-    );
+    const [selectedDate, setSelectedDate] = React.useState<Date | null>(new Date('2014-08-18T21:11:54'));
 
     const handleDateChange = (newValue: Date | null) => {
         setSelectedDate(newValue);
     };
 
     const handleIntervalChange = (event: Event, newValue: number | number[]) => {
-        if (Array.isArray(newValue)) {
-            setStartBoundary(new Date(newValue[0]));
-            setEndBoundary(new Date(newValue[1]));
-        }
+        setTimeBoundaries(newValue as number[]);
     };
 
-    const trafficData = useObservable(useLoading(trafficService.latest$));
 
     const getDataFor = (types: TrafficModel["trafficType"][], interval: number) => {
         const filtered = trafficData!.filter(td => types.includes(td.trafficType)).sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
@@ -77,59 +71,65 @@ const StatsPage: React.FC = () => {
     };
 
     return (
-        <Container sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto", pt: 1 }}>
+        <Container sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto", pt: 3 }}>
             {/* <Timeline /> */}
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box>
-                    <DesktopDatePicker
-                        label="Selected Day"
-                        inputFormat="MM/dd/yyyy"
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                        renderInput={(params) => <TextField {...params} />}
-                    />
-                    {/* <TimePicker
-                        label="Time"
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                        renderInput={(params) => <TextField {...params} />}
-                    /> */}
-                    <FormControl>
-                        <InputLabel id="select-interval">Interval</InputLabel>
-                        <Select
-                            labelId="select-interval"
-                            id="select"
-                            value={interval}
-                            label="Interval"
-                            onChange={ev => setInterval(ev.target.value as number)}
-                        >
-                            <MenuItem value={60000}>Minute</MenuItem>
-                            <MenuItem value={5 * 60 * 1000}>5 Minutes</MenuItem>
-                            <MenuItem value={10 * 60 * 1000}>10 Minutes</MenuItem>
-                            <MenuItem value={15 * 60 * 1000}>15 Minutes</MenuItem>
-                            <MenuItem value={30 * 60 * 1000}>30 Minutes</MenuItem>
-                            <MenuItem value={60 * 60 * 1000}>Hour</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Box>
+                <Grid container spacing={6}>
+                    <Grid item>
+                        <DesktopDatePicker
+                            label="Selected Day"
+                            inputFormat="MM/dd/yyyy"
+                            value={selectedDate}
+                            onChange={handleDateChange}
+                            renderInput={(params) => <TextField {...params} />}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Slider getAriaLabel={() => 'Time range'} 
+                            valueLabelDisplay="auto" 
+                            max={24} 
+                            min={0} 
+                            value={timeBoundaries} 
+                            onChange={handleIntervalChange}/>
+                    </Grid>
+                    <Grid item>
+                        <FormControl>
+                            <InputLabel id="select-interval">Interval</InputLabel>
+                            <Select
+                                labelId="select-interval"
+                                id="select"
+                                value={interval}
+                                label="Interval"
+                                onChange={ev => setInterval(ev.target.value as number)}
+                            >
+                                <MenuItem value={60000}>Minute</MenuItem>
+                                <MenuItem value={5 * 60 * 1000}>5 Minutes</MenuItem>
+                                <MenuItem value={10 * 60 * 1000}>10 Minutes</MenuItem>
+                                <MenuItem value={15 * 60 * 1000}>15 Minutes</MenuItem>
+                                <MenuItem value={30 * 60 * 1000}>30 Minutes</MenuItem>
+                                <MenuItem value={60 * 60 * 1000}>Hour</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                </Grid>
             </LocalizationProvider>
             {trafficData &&
-                <Grid sx={{ pl: 6 }} container spacing={6}>
+                <Grid container spacing={6}>
                     <Grid item xs={11}>
                         <Typography sx={{ mt: 1 }} variant="h4">Total</Typography>
-                        <Line options={chartOptions} data={getDataFor(["car", "bicycle", "motorbike", "pedestrian"], interval)} />
+                        <Bar options={chartOptions} data={getDataFor(["car", "bicycle", "motorbike", "pedestrian"], interval)} />
                     </Grid>
                     <Grid item>
                         <Typography variant="h4">Cars</Typography>
-                        <Line options={chartOptions} data={getDataFor(["car"], interval)} />
+                        <Bar options={chartOptions} data={getDataFor(["car"], interval)} />
                     </Grid>
                     <Grid item>
                         <Typography variant="h4">TwoWheeled</Typography>
-                        <Line options={chartOptions} data={getDataFor(["bicycle", "motorbike"], interval)} />
+                        <Bar options={chartOptions} data={getDataFor(["bicycle", "motorbike"], interval)} />
                     </Grid>
                     <Grid item>
                         <Typography variant="h4">Pedestrians</Typography>
-                        <Line options={chartOptions} data={getDataFor(["pedestrian"], interval)} />
+                        <Bar options={chartOptions} data={getDataFor(["pedestrian"], interval)} />
                     </Grid>
                 </Grid>
             }
