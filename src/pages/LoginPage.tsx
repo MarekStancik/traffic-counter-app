@@ -1,7 +1,6 @@
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { Box, Button, CircularProgress, FormControl, Paper, TextField, Typography } from "@mui/material";
 import React, { SyntheticEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import apiService from "../services/api.service";
 
 const styles = {
@@ -53,16 +52,14 @@ const AuthCard: React.FC = () => {
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
-    const navigate = useNavigate();
-
     const authenticate = async (ev: SyntheticEvent) => {
         ev.preventDefault();
         if (username.length > 0 && password.length > 0) {
             setIsAuthenticating(true);
             setFailMessage("");
             try {
+                await new Promise<void>((resolve,_) => setTimeout(() => resolve(), 1000));
                 await apiService.authenticate( username, password );
-                navigate("/locations");
             } catch(error) {
                 setIsAuthenticating(false);
                 setFailMessage((error as Error).message);

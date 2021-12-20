@@ -1,8 +1,9 @@
-import { DesktopDatePicker, LocalizationProvider, TimePicker } from "@mui/lab";
-import { Box, Container, FormControl, Grid, InputLabel, MenuItem, Select, Slider, Tab, Tabs, TextField, Typography } from "@mui/material";
+import { DesktopDatePicker, LocalizationProvider } from "@mui/lab";
+import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { Container, FormControl, Grid, InputLabel, MenuItem, Select, Slider, Tab, Tabs, TextField, Typography } from "@mui/material";
 import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Title } from 'chart.js';
 import React, { useState } from "react";
-import { Bar, Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { tap } from "rxjs";
 import LocationContext from "../contexts/location.context";
@@ -12,13 +13,12 @@ import { TrafficModel } from "../models/traffic.model";
 import locationService from "../services/location.service";
 import trafficService from "../services/traffic.service";
 import uiService from "../services/ui.service";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
 
 
 ChartJS.register(LineElement, BarElement, PointElement, LinearScale, Title, CategoryScale);
 
 const StatsPage: React.FC = () => {
-    const trafficData = useObservable(useLoading(trafficService.list$).pipe(tap(_ => console.log("pica"))));
+    const trafficData = useObservable(useLoading(trafficService.list$));
 
     const [timeBoundaries, setTimeBoundaries] = useState([0,24])
     const [interval, setInterval] = useState(60000);

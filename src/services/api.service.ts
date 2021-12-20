@@ -22,7 +22,7 @@ class ApiService {
         if (storedSessionKey) {
             this._sessionToken = storedSessionKey;
             try {
-                await this.invoke("get", "authentication");
+                await this.invoke("get", "/authentication");
                 this._state$.next("authenticated");
             } catch (error) {
                 this._sessionToken = null;
@@ -35,7 +35,7 @@ class ApiService {
     }
 
     public async authenticate(username: string, password: string): Promise<void> {
-        const response = {sessionToken: "mockToken"};//await this.invoke("post", "authentication", {username, password}, true);
+        const response = await this.invoke("post", "/authentication", {username, password}, true);
         if (response?.sessionToken) {
             this._sessionToken = response.sessionToken as string;
             window.localStorage.setItem(ApiService.SESSION_TOKEN_STORAGE_KEY, this._sessionToken);
@@ -44,7 +44,7 @@ class ApiService {
     }
 
     public async deauthenticate(): Promise<void> {
-        await this.invoke("delete", "authentication");
+        await this.invoke("delete", "/authentication");
         this._sessionToken = null;
         window.localStorage.removeItem(ApiService.SESSION_TOKEN_STORAGE_KEY);
         this._state$.next("unauthenticated");
@@ -67,7 +67,7 @@ class ApiService {
         if (response.status === 200 || response.status === 201) {
             return responseData as T;
         } else {
-            throw new Error(responseData.errorMessage);
+            throw new Error(responseData.error);
         }
     }
 }

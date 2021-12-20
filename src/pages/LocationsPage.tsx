@@ -6,7 +6,6 @@ import { Box, Container, Link, Typography } from "@mui/material";
 import clsx from "clsx";
 import React, { useEffect } from "react";
 import { Link as RouterLink, Outlet, Route, Routes } from "react-router-dom";
-import { tap } from "rxjs";
 import Navbar from "../components/Navbar";
 import useLoading from "../hooks/use-loading.hook";
 import useObservable from "../hooks/use-observable.hook";
