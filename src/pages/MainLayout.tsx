@@ -6,9 +6,7 @@ const MainLayout: React.FC = () => {
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%", width: "100%", overflowY: "auto" }}>
             <Routes>
-                <Route path="/" element={<Navigate replace to="/locations"/>}/>
-                <Route path="*" element={<Navigate replace to="/" />} />
-
+                <Route path="*" element={<Navigate replace to="/locations" />} />
                 <Route path="locations/*" element={<LocationOutlet />} />
             </Routes>
         </Box>
