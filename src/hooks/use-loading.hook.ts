@@ -1,13 +1,11 @@
-import { useEffect } from "react";
-import { Observable, tap } from "rxjs";
+import { finalize, Observable, of, switchMap, tap } from "rxjs";
 import uiService from "./../services/ui.service";
 
 const useLoading = <T extends any>(source: Observable<T>): Observable<T> => {
-    useEffect(() => {
-        uiService.setIsLoading(true);
-        return () => uiService.setIsLoading(false);
-    },[]);
-    return source.pipe(tap(_ => uiService.setIsLoading(false)));
+    return of(null).pipe(
+        tap(_ => uiService.setIsLoading(true)),
+        switchMap(_ => source.pipe(tap(_ => uiService.setIsLoading(false)),finalize(() => uiService.setIsLoading(false))))
+    );
 }
 
 export default useLoading;
