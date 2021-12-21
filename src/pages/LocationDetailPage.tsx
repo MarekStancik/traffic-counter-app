@@ -1,11 +1,12 @@
 import { DesktopDatePicker, LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import { Container, FormControl, Grid, InputLabel, MenuItem, Select, Slider, Tab, Tabs, TextField, Typography } from "@mui/material";
+import { Container, FormControl, Grid, InputLabel, MenuItem, Select, Tab, Tabs, TextField, Typography } from "@mui/material";
 import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, LineElement, PointElement, Title } from 'chart.js';
 import React, { useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { delay, take, tap } from "rxjs";
+import { delay, tap } from "rxjs";
+import RangeSlider from "../components/RangeSlider";
 import LocationContext from "../contexts/location.context";
 import useLoading from "../hooks/use-loading.hook";
 import useObservable from "../hooks/use-observable.hook";
@@ -17,39 +18,41 @@ import uiService from "../services/ui.service";
 ChartJS.register(LineElement, BarElement, PointElement, LinearScale, Title, CategoryScale);
 
 const StatsPage: React.FC = () => {
-    const [timeBoundaries, setTimeBoundaries] = useState([0,24]);
+    const [[startHour, endHour], setTimeBoundaries] = useState([0, 24]);
     const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
 
-    const trafficData = useObservable(useLoading(trafficService.subscribe({ day: selectedDate}).pipe(delay(1000),tap(_ => console.log("emitting")))), selectedDate);
-    
-    const [interval, setInterval] = useState(60000);
+    const trafficData = useObservable(useLoading(trafficService.subscribe({
+        day: selectedDate,
+        startHour: startHour,
+        endHour: endHour
+    }).pipe(delay(1000))), selectedDate, startHour, endHour);
+
+    const [interval, setInterval] = useState(5);
 
     const handleDateChange = (newValue: Date | null) => {
         newValue && setSelectedDate(newValue);
-        console.log(selectedDate)
-    };
-
-    const handleIntervalChange = (event: Event, newValue: number | number[]) => {
-        setTimeBoundaries(newValue as number[]);
     };
 
 
     const getDataFor = (types: TrafficModel["trafficType"][], interval: number) => {
         const filtered = trafficData!.filter(td => types.includes(td.trafficType)).sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
-
         const data = [];
-        for (let index = 0; index < filtered.length;) {
-            const element = filtered[index];
-            const endBoundary = new Date(element.timestamp.getTime() + interval);
-            let nextIndex = filtered.findIndex(td => td.timestamp > endBoundary);
-            if (nextIndex === -1) nextIndex = filtered.length;
-            data.push(nextIndex - index);
-            index = nextIndex;
+
+        const start = new Date(selectedDate);
+        for (let hour = startHour; hour < endHour; hour++) {
+            for (let minutes = 0; minutes < 60; minutes += interval) {
+                start.setHours(hour, minutes, 0, 0);
+                const end = new Date(start.getTime() + interval * 60 * 1000);
+                const contained = filtered.filter(td => td.timestamp > start && td.timestamp < end);
+                data.push(contained.length);
+            }
+
         }
 
-        const firstDate = filtered[0]?.timestamp.getTime() || new Date().getTime();
+        const firstDate = new Date(selectedDate);
+        firstDate.setHours(startHour, 0, 0, 0);
         return {
-            labels: data.map((_, idx) => new Date(firstDate + idx * interval).toLocaleString("en-US", { hour: "numeric", minute: "numeric" })),
+            labels: data.map((_, idx) => new Date(firstDate.getTime() + idx * interval * 60 * 1000).toLocaleString("en-GB", { hour: "numeric", minute: "numeric" })),
             datasets: [
                 {
                     data,
@@ -74,7 +77,6 @@ const StatsPage: React.FC = () => {
 
     return (
         <Container sx={{ display: "flex", flexDirection: "column", flex: "1", overflow: "auto", pt: 3 }}>
-            {/* <Timeline /> */}
             <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <Grid container spacing={6}>
                     <Grid item>
@@ -87,12 +89,7 @@ const StatsPage: React.FC = () => {
                         />
                     </Grid>
                     <Grid item xs={6}>
-                        <Slider getAriaLabel={() => 'Time range'} 
-                            valueLabelDisplay="auto" 
-                            max={24} 
-                            min={0} 
-                            value={timeBoundaries} 
-                            onChange={handleIntervalChange}/>
+                        <RangeSlider onCommit={values => setTimeBoundaries(values)} />
                     </Grid>
                     <Grid item>
                         <FormControl>
@@ -104,12 +101,11 @@ const StatsPage: React.FC = () => {
                                 label="Interval"
                                 onChange={ev => setInterval(ev.target.value as number)}
                             >
-                                <MenuItem value={60000}>Minute</MenuItem>
-                                <MenuItem value={5 * 60 * 1000}>5 Minutes</MenuItem>
-                                <MenuItem value={10 * 60 * 1000}>10 Minutes</MenuItem>
-                                <MenuItem value={15 * 60 * 1000}>15 Minutes</MenuItem>
-                                <MenuItem value={30 * 60 * 1000}>30 Minutes</MenuItem>
-                                <MenuItem value={60 * 60 * 1000}>Hour</MenuItem>
+                                <MenuItem value={5}>5 Minutes</MenuItem>
+                                <MenuItem value={10}>10 Minutes</MenuItem>
+                                <MenuItem value={15}>15 Minutes</MenuItem>
+                                <MenuItem value={30}>30 Minutes</MenuItem>
+                                <MenuItem value={60}>Hour</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
