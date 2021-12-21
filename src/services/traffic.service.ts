@@ -1,5 +1,5 @@
 import { TrafficModel } from "../models/traffic.model";
-import { BehaviorSubject, delay, Observable } from "rxjs";
+import { BehaviorSubject, delay, first, map, Observable, of } from "rxjs";
 
 const initialArray = Array.from({ length: 1000 }, (_, k) => ({
     id: k + "",
@@ -8,23 +8,20 @@ const initialArray = Array.from({ length: 1000 }, (_, k) => ({
 })) as TrafficModel[];
 
 class TrafficService {
-    public list: BehaviorSubject<TrafficModel[]> = new BehaviorSubject(initialArray);
+    public _list: BehaviorSubject<TrafficModel[]> = new BehaviorSubject(initialArray);
 
-    public get list$(): Observable<TrafficModel[]> {
-        return this.list.pipe(delay(1000));
-    }
-
-    // public getAll(): Promise<> {
-    //     return fetch()
-    //     // return this.http.get<T[]>(`${environment.apiUrl}/v1/${this.path}`)
-    //     //     .subscribe({
-    //     //         next: l => this.list$.next(l),
-    //     //         error: err => {
-    //     //             console.log(err);
-    //     //             this.list$.next([]);
-    //     //         }
-    //     //     });
+    // public get list$(): Observable<TrafficModel[]> {
+    //     return this.list.pipe(delay(1000));
     // }
+
+    public subscribe(filter: { day: Date}): Observable<TrafficModel[]> {
+        const start = new Date(filter.day);
+        start.setHours(0,0,0,0);
+
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+        return this._list.pipe(map(records => records.filter(i => i.timestamp > start && i.timestamp < end)));
+    }
 }
 
 const trafficService = new TrafficService();

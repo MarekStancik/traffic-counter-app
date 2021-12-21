@@ -5,7 +5,7 @@ import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, LineElement, 
 import React, { useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { tap } from "rxjs";
+import { delay, take, tap } from "rxjs";
 import LocationContext from "../contexts/location.context";
 import useLoading from "../hooks/use-loading.hook";
 import useObservable from "../hooks/use-observable.hook";
@@ -14,18 +14,19 @@ import locationService from "../services/location.service";
 import trafficService from "../services/traffic.service";
 import uiService from "../services/ui.service";
 
-
 ChartJS.register(LineElement, BarElement, PointElement, LinearScale, Title, CategoryScale);
 
 const StatsPage: React.FC = () => {
-    const trafficData = useObservable(useLoading(trafficService.list$));
+    const [timeBoundaries, setTimeBoundaries] = useState([0,24]);
+    const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
 
-    const [timeBoundaries, setTimeBoundaries] = useState([0,24])
+    const trafficData = useObservable(useLoading(trafficService.subscribe({ day: selectedDate}).pipe(delay(1000),tap(_ => console.log("emitting")))), selectedDate);
+    
     const [interval, setInterval] = useState(60000);
-    const [selectedDate, setSelectedDate] = React.useState<Date | null>(new Date('2014-08-18T21:11:54'));
 
     const handleDateChange = (newValue: Date | null) => {
-        setSelectedDate(newValue);
+        newValue && setSelectedDate(newValue);
+        console.log(selectedDate)
     };
 
     const handleIntervalChange = (event: Event, newValue: number | number[]) => {
@@ -35,6 +36,7 @@ const StatsPage: React.FC = () => {
 
     const getDataFor = (types: TrafficModel["trafficType"][], interval: number) => {
         const filtered = trafficData!.filter(td => types.includes(td.trafficType)).sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
+
         const data = [];
         for (let index = 0; index < filtered.length;) {
             const element = filtered[index];
@@ -45,7 +47,7 @@ const StatsPage: React.FC = () => {
             index = nextIndex;
         }
 
-        const firstDate = filtered[0].timestamp.getTime();
+        const firstDate = filtered[0]?.timestamp.getTime() || new Date().getTime();
         return {
             labels: data.map((_, idx) => new Date(firstDate + idx * interval).toLocaleString("en-US", { hour: "numeric", minute: "numeric" })),
             datasets: [
