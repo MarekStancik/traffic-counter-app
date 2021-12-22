@@ -5,7 +5,7 @@ import { BarElement, CategoryScale, Chart as ChartJS, LinearScale, LineElement, 
 import React, { useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { Link as RouterLink, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { delay, tap } from "rxjs";
+import { switchMap, tap } from "rxjs";
 import RangeSlider from "../components/RangeSlider";
 import LocationContext from "../contexts/location.context";
 import useLoading from "../hooks/use-loading.hook";
@@ -21,11 +21,13 @@ const StatsPage: React.FC = () => {
     const [[startHour, endHour], setTimeBoundaries] = useState([0, 24]);
     const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
 
-    const trafficData = useObservable(useLoading(trafficService.subscribe({
-        day: selectedDate,
-        startHour: startHour,
-        endHour: endHour
-    }).pipe(delay(1000))), selectedDate, startHour, endHour);
+    const trafficData = useObservable(useLoading(trafficService.fetchRecordsFor(selectedDate).pipe(
+        switchMap(() => trafficService.subscribe({
+            day: selectedDate,
+            startHour: startHour,
+            endHour: endHour
+        }))
+    )), selectedDate, startHour, endHour);
 
     const [interval, setInterval] = useState(5);
 
@@ -38,21 +40,24 @@ const StatsPage: React.FC = () => {
         const filtered = trafficData!.filter(td => types.includes(td.trafficType)).sort((a, b) => a.timestamp > b.timestamp ? 1 : -1);
         const data = [];
 
+        const dates: Date[] = [];
         const start = new Date(selectedDate);
-        for (let hour = startHour; hour < endHour; hour++) {
-            for (let minutes = 0; minutes < 60; minutes += interval) {
-                start.setHours(hour, minutes, 0, 0);
-                const end = new Date(start.getTime() + interval * 60 * 1000);
-                const contained = filtered.filter(td => td.timestamp > start && td.timestamp < end);
-                data.push(contained.length);
+        start.setHours(startHour,0,0,0);
+        for (let s = startHour * 60; s < endHour * 60; s += interval) {
+            dates.push(new Date(start.getTime() + s * 60 * 1000));
+        }
+        for (let index = 0, dateIdx = 0; index < filtered.length && dateIdx < dates.length; index++, dateIdx++) {
+            const start = dates[dateIdx];
+            const end = new Date(start.getTime() + interval * 60 * 1000);
+            let count = 0;
+            while (index < filtered.length && filtered[index].timestamp > start && filtered[index].timestamp < end) {
+                ++count; ++index;
             }
-
+            data.push(count);
         }
 
-        const firstDate = new Date(selectedDate);
-        firstDate.setHours(startHour, 0, 0, 0);
         return {
-            labels: data.map((_, idx) => new Date(firstDate.getTime() + idx * interval * 60 * 1000).toLocaleString("en-GB", { hour: "numeric", minute: "numeric" })),
+            labels: data.map((_, idx) => new Date(start.getTime() + idx * interval * 60 * 1000).toLocaleString("en-GB", { hour: "numeric", minute: "numeric" })),
             datasets: [
                 {
                     data,
