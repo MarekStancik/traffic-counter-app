@@ -41,11 +41,12 @@ const StatsPage: React.FC = () => {
         const data = [];
 
         const dates: Date[] = [];
-        const start = new Date(selectedDate);
-        start.setHours(startHour,0,0,0);
+        const startOfDay = new Date(selectedDate);
+        startOfDay.setHours(0,0,0,0);
         for (let s = startHour * 60; s < endHour * 60; s += interval) {
-            dates.push(new Date(start.getTime() + s * 60 * 1000));
+            dates.push(new Date(startOfDay.getTime() + s * 60 * 1000));
         }
+
         for (let index = 0, dateIdx = 0; index < filtered.length && dateIdx < dates.length; index++, dateIdx++) {
             const start = dates[dateIdx];
             const end = new Date(start.getTime() + interval * 60 * 1000);
@@ -57,7 +58,7 @@ const StatsPage: React.FC = () => {
         }
 
         return {
-            labels: data.map((_, idx) => new Date(start.getTime() + idx * interval * 60 * 1000).toLocaleString("en-GB", { hour: "numeric", minute: "numeric" })),
+            labels: dates.map(d => d.toLocaleString("en-GB", { hour: "numeric", minute: "numeric" })),
             datasets: [
                 {
                     data,
