@@ -47,7 +47,7 @@ const StatsPage: React.FC = () => {
             dates.push(new Date(startOfDay.getTime() + s * 60 * 1000));
         }
 
-        for (let index = 0, dateIdx = 0; index < filtered.length && dateIdx < dates.length; index++, dateIdx++) {
+        for (let index = 0, dateIdx = 0; index < filtered.length && dateIdx < dates.length; dateIdx++) {
             const start = dates[dateIdx];
             const end = new Date(start.getTime() + interval * 60 * 1000);
             let count = 0;
