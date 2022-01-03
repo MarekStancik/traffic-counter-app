@@ -31,7 +31,7 @@ interface SubmitButtonProps {
 
 const SubmitButton: React.FC<SubmitButtonProps> = ({ text, loadingText, isLoading, disabled, onSubmit }) => {
     return <FormControl sx={{ width: "75%", m: 1 }}>
-        <Button variant="contained" type="submit" disabled={disabled || isLoading}>{isLoading ? loadingText : text}</Button>
+        <Button data-cy="login" variant="contained" type="submit" disabled={disabled || isLoading}>{isLoading ? loadingText : text}</Button>
         {isLoading && <CircularProgress
             size={24}
             sx={{
@@ -71,11 +71,11 @@ const AuthCard: React.FC = () => {
         <VpnKeyIcon sx={{ ...styles.icon, transform: "rotate(-45deg)", color: failMessage.length > 0 ? "error.main" : "inherit" }} />
         <Box sx={{ ...styles.title, color: failMessage.length > 0 ? "error.main" : "inherit" }}>{failMessage.length > 0 ? failMessage : isAuthenticating ? "Authenticating..." : "Sign in to your account"}</Box>
         <FormControl sx={styles.item} fullWidth>
-            <TextField disabled={isAuthenticating} type="text" variant="outlined" label="Username" value={username} onChange={e => setUsername(e.target.value as string)}></TextField>
+            <TextField disabled={isAuthenticating} data-cy="username" type="text" variant="outlined" label="Username" value={username} onChange={e => setUsername(e.target.value as string)}></TextField>
         </FormControl>
 
         <FormControl sx={styles.item} fullWidth>
-            <TextField disabled={isAuthenticating} type="password" variant="outlined" label="Password" value={password} onChange={e => setPassword(e.target.value as string)}></TextField>
+            <TextField disabled={isAuthenticating} data-cy="password" type="password" variant="outlined" label="Password" value={password} onChange={e => setPassword(e.target.value as string)}></TextField>
         </FormControl>
 
         <SubmitButton disabled={username.length === 0 || password.length === 0} isLoading={isAuthenticating} text="Login" loadingText="Authenticating..." />
@@ -108,7 +108,7 @@ const LoginPage: React.FC = () => {
                     overflow: "auto",
                     maxHeight: "100%"
                 }}>
-                    <AuthCard/>
+                <AuthCard/>
                 </Paper>
 
             </Box>

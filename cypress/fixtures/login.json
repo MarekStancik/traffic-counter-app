@@ -1,0 +1,11 @@
+{
+    "request": {
+        "username": "marek",
+        "password": "my-super-secret-correct-password"
+    },
+    "response": {
+        "sessionExpiryDate": "2022-01-03T12:59:56.626Z",
+        "sessionToken": "b254024c-e765-4419-b384-c0ff16116388"
+    },
+    "error": "Provided credentials did not match any user"
+}

@@ -38,11 +38,11 @@ const Navbar: React.FC = () => {
                         <Link key={idx} component={RouterLink} sx={{display: "flex", alignItems: "center"}} underline="hover" color="inherit" to={l.href}>{l.icon}{l.title}</Link>)
                     }
                 </Breadcrumbs>
-                <IconButton sx={{ m: 1, marginLeft: "auto" }} onClick={colorMode.toggleColorMode} color="inherit">
+                <IconButton data-cy="theme" sx={{ m: 1, marginLeft: "auto" }} onClick={colorMode.toggleColorMode} color="inherit">
                     {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                 </IconButton>
                 <Tooltip title="Logout">
-                    <IconButton sx={{ m: 1}} onClick={_ => apiService.deauthenticate()} color="inherit">
+                    <IconButton data-cy="logout" sx={{ m: 1}} onClick={_ => apiService.deauthenticate()} color="inherit">
                         <LogoutIcon />
                     </IconButton>
                 </Tooltip>
