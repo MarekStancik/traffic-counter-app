@@ -6,6 +6,7 @@ import LocationContext from "../contexts/location.context";
 import useObservable from "../hooks/use-observable.hook";
 import locationService from "../services/location.service";
 import uiService from "../services/ui.service";
+import SensorsPage from "./SensorsPage";
 import StatsPage from "./StatsPage";
 
 const LocationDetailPage: React.FC = () => {
@@ -58,6 +59,7 @@ const LocationDetailOutlet: React.FC = () => {
                     <Route index element={<Navigate to={"general"} />} />
                     <Route path="general" element={<LocationDetailPage />} />
                     <Route path="stats" element={<StatsPage />} />
+                    <Route path="sensors" element={<SensorsPage />} />
                 </Routes>
             </div>
         </LocationContext.Provider>
